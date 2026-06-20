@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard — ProctorAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<div class="bg-mesh" data-html2canvas-ignore></div>
+
+<nav class="navbar" data-html2canvas-ignore>
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">🛡️</span>
+        ProctorAI
+    </a>
+    <div class="navbar-links">
+        <a href="/">Logout</a>
+    </div>
+</nav>
+
+<div class="dashboard-wrapper" id="pdf-content" style="padding-top: 100px;">
+    <div class="dashboard-header">
+        <h1>Welcome, {{ student.username }}</h1>
+        <p>Review your exam results below.</p>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div class="stat-label" style="color: var(--text-secondary); margin-bottom: 0.5rem;">Exam Status</div>
+            {% if not has_taken_exam %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold;">Not Attempted</div>
+            {% elif student.is_flagged %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--danger);">Flagged</div>
+            {% else %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">Submitted</div>
+            {% endif %}
+        </div>
+        
+        <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div class="stat-label" style="color: var(--text-secondary); margin-bottom: 0.5rem;">Total Score</div>
+            {% if is_graded %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold;">{{ total_score }}</div>
+            {% else %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">Pending Admin Review</div>
+            {% endif %}
+        </div>
+
+        <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div class="stat-label" style="color: var(--text-secondary); margin-bottom: 0.5rem;">Result (Req. >={{ passing_mark }})</div>
+            {% if not is_graded %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--text-secondary);">N/A</div>
+            {% elif total_score >= passing_mark and not student.is_flagged %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">Passed</div>
+            {% else %}
+                <div class="stat-value" style="font-size: 1.5rem; font-weight: bold; color: var(--danger);">Failed</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-grid mt-6" style="margin-top: 30px;">
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>📝 Actions & Next Steps</h3>
+            </div>
+            <div class="dash-card-body" style="padding: 2rem;">
+                {% if student.is_flagged %}
+                    <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; color: #fca5a5; margin-bottom: 2rem;">
+                        <strong>⚠️ Misconduct Detected:</strong> Your exam has been flagged automatically. This typically results in an automatic failure status.
+                    </div>
+                {% endif %}
+
+                {% if not has_taken_exam %}
+                    <a href="/start_exam" class="btn btn-primary" style="margin-bottom: 1rem; display: inline-block;">Start Exam →</a>
+                {% else %}
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">You have already completed the exam. Further attempts are locked.</p>
+                    <button class="btn btn-secondary" onclick="downloadPDF()" data-html2canvas-ignore>📄 Download Result as PDF</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadPDF() {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+          margin:       1,
+          filename:     '{{ student.username }}_ProctorAI_Result.pdf',
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2 },
+          jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+<div class="developer-tag">
+    <span>Developed by</span> <strong>ASHLABS</strong>
+</div>
+</body>
+</html>

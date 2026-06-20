@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered online exam proctoring system with real-time face detection and monitoring">
+    <title>AI Proctoring System — Secure Online Exams</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">🛡️</span>
+        ProctorAI
+    </a>
+    <div class="navbar-links">
+        <a href="/student/login">Student</a>
+        <a href="/admin/login">Admin</a>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="page-wrapper">
+    <div class="container">
+        <div class="hero-section">
+            <div class="hero-badge">
+                <span class="pulse-dot"></span>
+                AI-Powered Proctoring
+            </div>
+
+            <h1 class="hero-title">
+                Secure Online Exams<br>
+                with <span class="accent">AI Monitoring</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Advanced face detection, gaze tracking, and phone detection ensure exam integrity with real-time AI surveillance.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="/student/login" class="btn btn-primary btn-hero" id="student-login-btn">
+                    🎓 Student Login
+                </a>
+                <a href="/admin/login" class="btn btn-secondary btn-hero" id="admin-login-btn">
+                    🔑 Admin Login
+                </a>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="features-section">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h3>Face Detection</h3>
+                    <p>Real-time face mesh tracking detects if the student looks away or leaves the frame.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Phone Detection</h3>
+                    <p>YOLOv8 object detection instantly flags mobile phones in the camera feed.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Activity Logs</h3>
+                    <p>Every suspicious event is logged with timestamps for admin review.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="developer-tag">
+    <span>Developed by</span> <strong>ASHLABS</strong>
+</div>
+</body>
+</html>

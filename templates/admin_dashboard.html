@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — ProctorAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">🛡️</span>
+        ProctorAI
+    </a>
+    <div class="navbar-links">
+        <a href="/">Logout</a>
+    </div>
+</nav>
+
+<div class="dashboard-wrapper">
+    <div class="dashboard-header">
+        <h1>📊 Admin Dashboard</h1>
+        <p>Monitor students and review proctoring event logs.</p>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value">{{ students|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Events</div>
+            <div class="stat-value">{{ logs|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Avg. Score</div>
+            <div class="stat-value">{{ avg_score }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">System Status</div>
+            <div class="stat-value" style="font-size: 1.2rem;">🟢 Active</div>
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="dashboard-grid">
+
+        <!-- Students Card -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>👥 Registered Students</h3>
+                <span class="badge">{{ students|length }}</span>
+            </div>
+            <div class="dash-card-body">
+                {% if students %}
+                    {% for student in students %}
+                    <div class="list-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="item-info" style="display: flex; align-items: center; gap: 1rem;">
+                            <div class="item-avatar">{{ student.username[0]|upper }}</div>
+                            <div>
+                                <div class="item-name" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    {{ student.username }}
+                                    {% if student.is_flagged %}
+                                        <span style="color: #ef4444; font-size: 0.8rem; background: rgba(239, 68, 68, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px;" title="Flagged for Misconduct">🚩 Flagged</span>
+                                    {% endif %}
+                                </div>
+                                <div class="item-detail">Student ID: {{ student.id }}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="/admin/student/{{ student.id }}/exam" style="background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 6px; color: #fff; text-decoration: none; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.2);">Review Exam →</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>No students registered yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Logs Card -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>📋 Event Logs</h3>
+                <span class="badge">{{ logs|length }}</span>
+            </div>
+            <div class="dash-card-body">
+                {% if logs %}
+                    {% for log in logs %}
+                    <div class="list-item">
+                        <div>
+                            <div class="log-event {% if 'PHONE' in log.event %}danger{% elif 'NO FACE' in log.event or 'MULTIPLE' in log.event %}warning{% endif %}">
+                                {% if 'PHONE' in log.event %}📱{% elif 'NO FACE' in log.event %}👻{% elif 'MULTIPLE' in log.event %}👥{% else %}⚡{% endif %}
+                                {{ log.event }}
+                            </div>
+                            {% if log.student_id %}
+                            <div class="log-student">Student ID: {{ log.student_id }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="log-time">{{ log.timestamp.strftime('%b %d, %H:%M') if log.timestamp else '' }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">✅</div>
+                        <p>No suspicious events detected</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Second Row Analytics Grid -->
+    <div class="dashboard-grid mt-6">
+        <!-- Top Performers Card -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>🏆 Top Performers</h3>
+            </div>
+            <div class="dash-card-body">
+                {% if toppers %}
+                    {% for topper in toppers %}
+                    <div class="list-item" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="item-info" style="display: flex; align-items: center; gap: 1rem;">
+                            <div class="item-avatar" style="background: var(--accent-primary);">{{ loop.index }}</div>
+                            <div>
+                                <div class="item-name">{{ topper.student.username }}</div>
+                                <div class="item-detail">Student ID: {{ topper.student.id }}</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: bold; color: var(--success);">
+                            {{ topper.score }} Pts
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📈</div>
+                        <p>No exams have been graded yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Third Row Config Grid -->
+    <div class="dashboard-grid mt-6">
+        <!-- Settings Card -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>⚙️ Proctoring Settings</h3>
+            </div>
+            <div class="dash-card-body" style="padding: 1.5rem;">
+                <form action="/admin/settings/update" method="POST">
+                    <div class="form-group">
+                        <label>Max 'No Face' Frames before Warning</label>
+                        <input type="number" name="max_no_face" class="input-light" value="{{ settings.max_no_face }}" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                    </div>
+                    <div class="form-group mt-6" style="margin-top: 1rem;">
+                        <label>Max 'Multiple Faces' Frames before Warning</label>
+                        <input type="number" name="max_multi_face" class="input-light" value="{{ settings.max_multi_face }}" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                    </div>
+                    <div class="form-group mt-6" style="margin-top: 1rem;">
+                        <label>Minimum Passing Marks (Threshold)</label>
+                        <input type="number" name="passing_marks" class="input-light" value="{{ settings.passing_marks }}" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                    </div>
+                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%;">Save Settings</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Questions Card -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>📝 Manage Exam Questions</h3>
+                <span class="badge">{{ questions|length }}</span>
+            </div>
+            <div class="dash-card-body" style="padding: 1.5rem;">
+                
+                <h4 style="margin-bottom: 1rem; color: #a1a1aa;">Add New Question</h4>
+                <form action="/admin/questions/add" method="POST" id="question-form">
+                    <div class="form-group">
+                        <label>Question Type</label>
+                        <select name="question_type" id="q_type" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; margin-bottom: 1rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;" onchange="toggleMCQOptions()">
+                            <option value="brief" style="color: #000;">Brief / Subjective</option>
+                            <option value="mcq" style="color: #000;">Multiple Choice (MCQ)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Question Text</label>
+                        <textarea name="question_text" rows="2" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;" required></textarea>
+                    </div>
+
+                    <div id="mcq-options" style="display: none; margin-top: 1rem;">
+                        <input type="text" name="option_a" placeholder="Option A" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                        <input type="text" name="option_b" placeholder="Option B" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                        <input type="text" name="option_c" placeholder="Option C" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                        <input type="text" name="option_d" placeholder="Option D" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                        <label style="margin-top:0.5rem; display:block;">Correct Option (A, B, C, or D)</label>
+                        <input type="text" name="correct_option" placeholder="e.g. A" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label>Question Worth (Marks)</label>
+                        <input type="number" name="marks" value="1" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top: 1rem; width: 100%; padding: 0.5rem;">➕ Add Question</button>
+                </form>
+
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 2rem 0;">
+
+                <h4 style="margin-bottom: 1rem; color: #a1a1aa;">Existing Questions</h4>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    {% if questions %}
+                        {% for q in questions %}
+                            <div style="background: rgba(255,255,255,0.03); padding: 0.8rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                                <div style="font-size: 0.8rem; color: #a1a1aa;">ID: {{ q.id }} | Type: {{ q.question_type|upper }}</div>
+                                <div>{{ q.question_text }}</div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #a1a1aa; font-size: 0.9rem;">No questions added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function toggleMCQOptions() {
+    const type = document.getElementById('q_type').value;
+    const mcqDiv = document.getElementById('mcq-options');
+    if(type === 'mcq') {
+        mcqDiv.style.display = 'block';
+    } else {
+        mcqDiv.style.display = 'none';
+    }
+}
+</script>
+
+<div class="developer-tag">
+    <span>Developed by</span> <strong>ASHLABS</strong>
+</div>
+</body>
+</html>

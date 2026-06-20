@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login — ProctorAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">🛡️</span>
+        ProctorAI
+    </a>
+    <div class="navbar-links">
+        <a href="/">Home</a>
+        <a href="/admin/login">Admin</a>
+    </div>
+</nav>
+
+<div class="page-wrapper">
+    <div class="card">
+        <div class="card-icon">🎓</div>
+        <h2>Student Login</h2>
+        <p class="card-subtitle">Sign in to access your exams</p>
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                    <span class="input-icon">👤</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <span class="input-icon">🔒</span>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" class="btn-primary" id="student-login-submit">Sign In</button>
+            </div>
+        </form>
+
+        <div class="form-divider">or</div>
+
+        <div class="form-footer">
+            <a href="/student/register">New student? Create an account →</a>
+        </div>
+    </div>
+</div>
+
+<div class="developer-tag">
+    <span>Developed by</span> <strong>ASHLABS</strong>
+</div>
+</body>
+</html>

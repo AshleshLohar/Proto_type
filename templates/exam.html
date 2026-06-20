@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam — ProctorAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div id="secure-overlay" style="position: fixed; inset: 0; background: #09090b; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh;">
+    <h2 style="color: #fff; margin-bottom: 1rem; font-size: 2rem;">🔒 Secure Exam Environment</h2>
+    <p style="color: #a1a1aa; margin-bottom: 2rem; max-width: 500px; text-align: center; font-size: 1.1rem;">This exam requires Fullscreen mode. <span style="color: #ef4444; font-weight: bold;">WARNING: Exiting Fullscreen mode will instantly flag your exam as MISCONDUCT and automatically submit it.</span> Switching tabs will result in a warning.</p>
+    <button onclick="enterSecureMode()" class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 2rem;">Start Exam in Secure Mode</button>
+</div>
+
+<div class="exam-container" id="exam-content" style="display: none;">
+
+    <!-- LEFT SIDE (QUESTIONS) -->
+    <form class="questions" id="exam-form" method="POST" action="/submit_exam">
+        <div class="exam-header">
+            <h1>📝 AI & ML Examination</h1>
+            <div class="exam-timer" id="exam-timer">
+                🕐 <span id="timer-display">00:00:00</span>
+            </div>
+        </div>
+
+        {% if questions %}
+            {% for q in questions %}
+            <div class="question-card">
+                <div class="question-number">
+                    <span class="q-badge">{{ loop.index }}</span>
+                    Question {{ loop.index }}
+                </div>
+                <p class="question-text">{{ q.question_text }}</p>
+
+                {% if q.question_type == 'mcq' %}
+                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem; padding: 0.5rem;">
+                        <label style="color: #e4e4e7; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="q_{{ q.id }}" value="A"> A. {{ q.option_a }}</label>
+                        <label style="color: #e4e4e7; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="q_{{ q.id }}" value="B"> B. {{ q.option_b }}</label>
+                        <label style="color: #e4e4e7; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="q_{{ q.id }}" value="C"> C. {{ q.option_c }}</label>
+                        <label style="color: #e4e4e7; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;"><input type="radio" name="q_{{ q.id }}" value="D"> D. {{ q.option_d }}</label>
+                    </div>
+                {% else %}
+                    <textarea name="q_{{ q.id }}" placeholder="Type your answer here..." rows="4" style="margin-top: 1rem;"></textarea>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="question-card">
+                <p class="question-text">No questions assigned for this exam.</p>
+            </div>
+        {% endif %}
+
+        <div class="exam-submit-area">
+            <button type="button" class="btn btn-primary" id="submit-exam-btn" onclick="submitExam()">
+                ✅ Submit Exam
+            </button>
+        </div>
+    </form>
+
+    <!-- RIGHT SIDE (CAMERA) -->
+    <div class="camera">
+        <div class="camera-header">
+            <span class="live-indicator"></span>
+            Live Monitoring
+        </div>
+
+        <img src="/video" class="video-feed" alt="Live proctoring feed">
+
+        <div class="camera-status">
+            <div class="status-item">
+                <span class="status-label">Camera</span>
+                <span class="status-value" style="color: #10b981;">
+                    <span class="dot"></span>
+                    Active
+                </span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Face Detection</span>
+                <span class="status-value" style="color: #10b981;">
+                    <span class="dot"></span>
+                    Running
+                </span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Phone Detection</span>
+                <span class="status-value" style="color: #10b981;">
+                    <span class="dot"></span>
+                    Running
+                </span>
+            </div>
+        </div>
+
+        <div class="camera-warning">
+            ⚠️ Stay in frame. Looking away or using a phone will be flagged.
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let isSecureMode = false;
+    let warningCooldown = false;
+
+    function enterSecureMode() {
+        const elem = document.documentElement;
+        const requestFS = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.msRequestFullscreen;
+
+        if (requestFS) {
+            requestFS.call(elem).then(() => {
+                document.getElementById('secure-overlay').style.display = 'none';
+                document.getElementById('exam-content').style.display = 'grid';
+                isSecureMode = true;
+            }).catch(err => {
+                alert(`Cannot enter secure mode: ${err.message}`);
+            });
+        } else {
+            // Fallback for browsers that don't support fullscreen
+            document.getElementById('secure-overlay').style.display = 'none';
+            document.getElementById('exam-content').style.display = 'grid';
+            isSecureMode = true;
+        }
+    }
+
+    async function reportWarning(reason) {
+        if (warningCooldown) return;
+        warningCooldown = true;
+        setTimeout(() => warningCooldown = false, 3000); // 3 second cooldown
+
+        try {
+            const response = await fetch('/api/exam/warning', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason })
+            });
+            const data = await response.json();
+            
+            if (data.auto_submit) {
+                alert("🚨 Maximum warnings (3) reached. Your exam is being automatically submitted.");
+                submitExam();
+            } else {
+                const remaining = 3 - data.warnings;
+                alert("⚠️ WARNING: " + reason + "!\nViolations forgiven with warnings. You have " + remaining + " warning(s) left before auto-submit.");
+                currentWarnings = data.warnings;
+            }
+        } catch (e) {
+            console.error("Warning log failed:", e);
+        }
+    }
+
+    async function reportMisconduct(reason) {
+        alert("🚨 MISCONDUCT DETECTED: " + reason + "\nYour exam has been flagged and is being forcefully submitted immediately.");
+
+        try {
+            await fetch('/api/exam/misconduct', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason })
+            });
+        } catch (e) {
+            console.error("Misconduct log failed:", e);
+        }
+        submitExam();
+    }
+
+    // Detect Tab Switch or Minimized Window
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden && isSecureMode) {
+            reportWarning("Tab Switched or Browser Minimized");
+        }
+    });
+
+    // Detect Exit Fullscreen
+    document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && isSecureMode) {
+            reportMisconduct("Exited Fullscreen Mode");
+        }
+    });
+
+    function submitExam() {
+        isSecureMode = false; // Disable triggers
+        if(document.fullscreenElement) {
+            document.exitFullscreen().catch(err => console.log(err));
+        }
+        document.getElementById('exam-form').submit();
+    }
+
+    // Timer logic
+    (function() {
+        let seconds = 0;
+        const display = document.getElementById('timer-display');
+        setInterval(function() {
+            seconds++;
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            display.textContent = h + ':' + m + ':' + s;
+        }, 1000);
+    })();
+
+    // Polling for camera-based warnings and auto-submit
+    let currentWarnings = 0;
+
+    // Fetch initial status
+    fetch('/api/exam/status')
+        .then(res => res.json())
+        .then(data => {
+            if (data.warnings) {
+                currentWarnings = data.warnings;
+            }
+        }).catch(err => console.log(err));
+
+    setInterval(async () => {
+        if (!isSecureMode) return;
+        try {
+            const response = await fetch('/api/exam/status');
+            const data = await response.json();
+
+            if (data.auto_submit) {
+                alert("🚨 Maximum warnings (3) reached due to camera/behavior misconduct. Your exam is being automatically submitted.");
+                submitExam();
+            } else if (data.warnings > currentWarnings) {
+                const remaining = 3 - data.warnings;
+                alert(`⚠️ WARNING: Camera misconduct detected (Face/Phone)!\nViolations forgiven. You have ${remaining} warning(s) left before auto-submit.`);
+                currentWarnings = data.warnings;
+            }
+        } catch (e) {
+            console.error("Status check failed:", e);
+        }
+    }, 2000); // Check every 2 seconds
+</script>
+
+</body>
+</html>

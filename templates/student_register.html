@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — ProctorAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <span class="brand-icon">🛡️</span>
+        ProctorAI
+    </a>
+    <div class="navbar-links">
+        <a href="/">Home</a>
+        <a href="/student/login">Sign In</a>
+    </div>
+</nav>
+
+<div class="page-wrapper">
+    <div class="card">
+        <div class="card-icon">✨</div>
+        <h2>Create Account</h2>
+        <p class="card-subtitle">Register as a new student</p>
+
+        <form method="POST">
+            {% if error %}
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                    <span class="input-icon">👤</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Create a password" required>
+                    <span class="input-icon">🔒</span>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" class="btn-primary" id="register-submit">Create Account</button>
+            </div>
+        </form>
+
+        <div class="form-footer mt-6">
+            <a href="/student/login">Already have an account? Sign In →</a>
+        </div>
+    </div>
+</div>
+
+<div class="developer-tag">
+    <span>Developed by</span> <strong>ASHLABS</strong>
+</div>
+</body>
+</html>
